@@ -1,0 +1,13 @@
+# Local credentials and caches (never commit)
+data/
+credential*.json
+*.cookie*
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/

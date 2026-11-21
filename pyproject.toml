@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bili-material"
+version = "0.1.0"
+description = "Read-only, token-efficient Bilibili material source (core library + MCP server) for a self-media writing pipeline."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "bilibili-api-python>=17.4,<18",
+    "aiohttp>=3.9",
+    "mcp>=2.0,<3",
+]
+
+[project.scripts]
+bili-material-mcp = "bili_material.mcp_server:main"
+bili-material-login = "bili_material.login:main"
+
+[tool.setuptools.packages.find]
+include = ["bili_material*"]
