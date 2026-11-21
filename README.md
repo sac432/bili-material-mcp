@@ -92,4 +92,4 @@ agent 每走一步，都要把系统提示、工具说明和之前所有结果�
 
 GPL-3.0-or-later，因为依赖的 [bilibili-api-python](https://github.com/Nemo2011/bilibili-api) 是 GPL-3.0-or-later。参考过 adoresever/bilibili-mcp 和 c1overzz/dsh-bili-scroll（均为 MIT 许可证）的接口用法，没有复制它们的代码。
 
-获取的字幕和评论版权归原作者所有。请只把它们当作写作参考，引用时适量并注明出处。
+获取的字幕和评论版权归原作者所有。请只把它们当作学习用途，引用时适量并注明出处。
