@@ -72,6 +72,29 @@ interpreter path if the repository lives elsewhere):
 }
 ```
 
+## Using it in DeepSeek Harness (dsh)
+
+dsh connects to MCP servers through its `@deepseek-ai/dsh-mcp-client` plugin. Add an
+`insert` entry to the profile patch layer, e.g. `~/.dsh/profiles/web/cordis.patch.yml`
+(the file must stay a top-level YAML array):
+
+```yaml
+- insert:
+    - id: mcp-bili-material
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: bili-material
+        transport: stdio
+        command: '<install-dir>/.venv/Scripts/python.exe'
+        args: ['-X', 'utf8', '-m', 'bili_material.mcp_server']
+        cwd: '<install-dir>'
+        toolCallTimeoutMs: 90000
+```
+
+Restart dsh; the tools appear as `mcp__bili-material__search_videos` and so on. This is a
+plain MCP server, not a dsh-specific plugin, so the same process serves Claude Code, dsh and
+any other MCP client.
+
 ## Tools
 
 All tools return compact plain text ending with `[~N tokens | cache=hit|miss]`.
