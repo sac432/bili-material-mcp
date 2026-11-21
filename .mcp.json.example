@@ -3,10 +3,7 @@
     "bili-material": {
       "type": "stdio",
       "command": "<install-dir>/.venv/Scripts/python.exe",
-      "args": ["-X", "utf8", "-m", "bili_material.mcp_server"],
-      "env": {
-        "BILI_MIN_INTERVAL": "1.2"
-      }
+      "args": ["-X", "utf8", "-m", "bili_material.mcp_server"]
     }
   }
 }
