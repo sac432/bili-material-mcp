@@ -203,6 +203,37 @@ How to read these numbers:
 - Measured 2026-11-20 with bilibili-api-python 17.4.2; counts drift as videos gain views and
   comments.
 
+### Compared with the dsh-bili-scroll MCP
+
+The raw-API numbers above are an upper bound. `dsh-bili-scroll` (v2.5.2) already prunes fields
+in its vendored `bilibili-mcp`, so it was also measured directly: same keyword, same three
+videos, logged in, its four read tools enabled via `BILI_MCP_TOOLS`. Its workflow needs
+`bili_search` + per video `bili_video_info`, `bili_subtitle`, `bili_comments` (10 calls); this
+server needs `search_videos` + one `get_video_digest` per video (4 calls).
+
+| setup | calls | tool-result ~tokens | cumulative input ~tokens* |
+|---|---:|---:|---:|
+| dsh-bili-scroll, 30 comments (its default) | 10 | 26076 | 147205 |
+| dsh-bili-scroll, 10 comments | 10 | 20168 | 122346 |
+| bili-material, defaults (3000-char subtitle, 10 comments) | 4 | 9390 | 33896 |
+| bili-material, full subtitle + 30 comments | 4 | 18268 | 48896 |
+
+\* Sum of input tokens over a sequential agent loop in which every request resends the previous
+tool results plus a nominal 3000-token system prompt; excludes the model's own outputs and
+reasoning. This models the "resend the whole context on every step" cost and is an estimate,
+not a billing measurement.
+
+Observations:
+
+- With equal content (full subtitles, 30 comments), tool results are about 30% smaller. The
+  savings are in search (−60%: no aid, raw timestamps or descriptions) and comments (no rpid,
+  user names, timestamps, emote codes or duplicates). Subtitles are slightly **larger** here
+  because punctuation and paragraph breaks are added.
+- Most of the difference in total cost comes from fewer round trips (4 vs 10 calls), which
+  shrinks the resent context.
+- dsh-bili-scroll includes two sub-replies per comment, which this server omits; they can be
+  useful writing material.
+
 Example `search_videos` output:
 
 ```text
