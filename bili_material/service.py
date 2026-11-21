@@ -241,7 +241,7 @@ class BiliMaterial:
 
     async def _comment_pool(self, bvid: str, want: int) -> dict:
         meta = await self.video_meta(bvid)
-        key = f"comments:{bvid}"
+        key = f"comments:{bvid}:{'auth' if self.logged_in else 'anon'}"
         pool = self.cache.get(key) or {
             "items": [],
             "seen": [],

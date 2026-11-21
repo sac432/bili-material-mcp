@@ -147,7 +147,38 @@ Keyword `AI写作`, 2026-11-20, **anonymous** (no subtitles, first comment page 
 | digest | BV1RNidYCEdq | 26348 | 7280 | 645 | 300 | 4.1% |
 | **total** | | | 32828 | | 1338 | 4.1% |
 
-<!-- LOGGED_IN_RESULTS -->
+Same keyword and videos, **logged in** (subtitles included, all three videos have AI
+subtitles; up to 3 comment pages):
+
+| call | target | raw chars | raw ~tokens | mcp chars | mcp ~tokens | ratio |
+|---|---|---:|---:|---:|---:|---:|
+| search | "AI写作" x10 | 15326 | 4635 | 1100 | 503 | 10.9% |
+| digest | BV1acxv6SEpp | 167461 | 45663 | 3011 | 2432 | 5.3% |
+| digest | BV17ysv64EKC | 144052 | 41539 | 3499 | 3133 | 7.5% |
+| digest | BV1RNidYCEdq | 160119 | 45869 | 3957 | 3322 | 7.2% |
+| **total** | | | 137706 | | 9390 | 6.8% |
+
+Where the raw size comes from (BV17ysv64EKC, single requests):
+
+| raw response | chars | ~tokens | useful content |
+|---|---:|---:|---|
+| video info | 2538 | 712 | title, owner, stats, description |
+| player info | 3399 | 870 | subtitle track list |
+| subtitle body | 56835 | 18675 | 576 segments, 6065 chars of actual text |
+| one hot-comment page | 81284 | 21283 | 18 comments (avatars, decorations, jump links, ...) |
+
+How to read these numbers:
+
+- Most of the saving comes from dropping JSON structure, timestamps and comment metadata, and
+  from the default 3000-char subtitle window. The compressed subtitle **text itself is not
+  shorter**: the full compressed subtitle of BV17ysv64EKC is 6670 chars versus 6065 raw text
+  chars, because punctuation and paragraph breaks are added to unpunctuated AI subtitles.
+- Reading the rest of a long subtitle with `get_subtitle(offset=...)` costs roughly one token
+  per Chinese character; that part is not reduced further.
+- A repeated digest or subtitle page for the same bvid is served from cache with zero network
+  requests.
+- Measured 2026-11-20 with bilibili-api-python 17.4.2; counts drift as videos gain views and
+  comments.
 
 Example `search_videos` output:
 
@@ -192,6 +223,10 @@ scripts/compare_tokens.py
   then reports `[subtitle] none`.
 - Bilibili's player API has been reported to occasionally return an AI subtitle belonging to
   a different video. This tool does not detect that; sanity-check subtitles against the title.
+- bilibili-api 17.4.2's `QrCodeLogin` reports success but stores empty cookies (it only
+  parses the redirect URL in a way that no longer matches). `bili_material.login` therefore
+  polls the web QR endpoints itself, reads both `Set-Cookie` and the redirect URL, and refuses
+  to save a credential without `SESSDATA`.
 - On Windows, bilibili-api's default `curl_cffi` client cannot load its CA bundle when the
   install path contains non-ASCII characters (curl error 77). This project selects the
   `aiohttp` client instead.
