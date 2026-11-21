@@ -241,6 +241,31 @@ Observations:
 - dsh-bili-scroll includes two sub-replies per comment, which this server omits; they can be
   useful writing material.
 
+### End-to-end in dsh (billed usage)
+
+Measured in dsh 0.2.2-rc.5 with DeepSeek-V4.1-Flash on 2026-11-20. Same prompt for every run:
+summarise the subtitles and hot comments of BV1RNidYCEdq, BV1g2tB6YERy and BV1cNWd6DEgY, with
+the allowed tool set restricted in the prompt. Numbers are dsh's per-request usage summed over
+the run (from the session log).
+
+| tools | run | steps | total tok | uncached in | cached in | output |
+|---|---|---:|---:|---:|---:|---:|
+| `get_video_digests` (batch) | 1 | 3 | 76941 | 30042 | 43136 | 3763 |
+| `get_video_digests` (batch) | 2 | 3 | 77627 | 13880 | 57984 | 5763 |
+| `get_video_digest` (single) | 1 | 4 | 115433 | 22205 | 86528 | 6700 |
+| `get_video_digest` (single) | 2 | 4 | 119282 | 18746 | 91008 | 9528 |
+| dsh-bili-scroll `bili_subtitle` + `bili_comments` | 1 | 7 | 217137 | 33086 | 179712 | 4339 |
+
+- The batch tool saved one step versus single digests (the model already parallelised the
+  three single calls) and about a third of total tokens. dsh-bili-scroll's run called one tool
+  per step and used about 2.8× the batch total.
+- In every bili-material run the model fetched the rest of each subtitle with `get_subtitle`
+  in a second tool step: for a "summarise the video" task it wants the whole subtitle.
+- Batch run 1 was the first request after a dsh restart, so its prefix cache was cold; that
+  explains its higher uncached input.
+- Two runs per configuration (one for dsh-bili-scroll) is a small sample; the model chooses
+  its own parameters and strategy, so individual runs vary.
+
 Example `search_videos` output:
 
 ```text
