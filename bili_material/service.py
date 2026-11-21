@@ -310,7 +310,7 @@ class BiliMaterial:
         self,
         bvid: str,
         subtitle_max_chars: int = 3000,
-        top_comments: int = 10,
+        top_comments: int = 25,
         max_chars_per_comment: int = 120,
     ) -> dict:
         meta = await self.video_meta(bvid)

@@ -103,7 +103,7 @@ All tools return compact plain text ending with `[~N tokens | cache=hit|miss]`.
 | Tool | Parameters (defaults) | Returns |
 |---|---|---|
 | `search_videos` | `keyword`, `limit=10` (max 20), `order=totalrank` (`click`, `pubdate`, `dm`, `stow`, `scores`) | one line per video: bvid, title, uploader, play/like/comment counts, duration, date |
-| `get_video_digest` | `bvid`, `subtitle_max_chars=3000`, `top_comments=10` | metadata + stats + description (≤300 chars), compressed subtitle (first chunk, with `next_offset` when truncated), top comments by likes (≤120 chars each) — **one call instead of four** |
+| `get_video_digest` | `bvid`, `subtitle_max_chars=3000`, `top_comments=25` | metadata + stats + description (≤300 chars), compressed subtitle (first chunk, with `next_offset` when truncated), top comments by likes (≤120 chars each) — **one call instead of four** |
 | `get_subtitle` | `bvid`, `max_chars=3000` (max 20000), `offset=0`, `page=1` | one chunk of the compressed subtitle, `total_chars`, `next_offset` |
 | `get_hot_comments` | `bvid`, `limit=20` (max 50), `max_chars_per_comment=150` | cleaned comments sorted by likes, with like and reply counts |
 
@@ -141,7 +141,7 @@ asyncio.run(main())
 5. **Explicit truncation markers.** Every clipped field says so (`desc(truncated)`,
    `truncated; next_offset=...`, `N clipped`).
 6. **Conservative defaults and hard caps.** Subtitle 3000 chars per call (cap 20000), digest
-   10 comments, comments 20 (cap 50), search 10 (cap 20).
+   25 comments, comments 20 (cap 50), search 10 (cap 20).
 7. **Fewer round trips.** `get_video_digest` returns metadata, subtitle and comments together.
 8. **Local cache** (`data/cache/`, memory + JSON files): search 30 min, video info 6 h,
    subtitles 7 days, comments 2 h. A repeated call for the same bvid makes no network request.
@@ -171,7 +171,8 @@ Keyword `AI写作`, 2026-11-20, **anonymous** (no subtitles, first comment page 
 | **total** | | | 32828 | | 1338 | 4.1% |
 
 Same keyword and videos, **logged in** (subtitles included, all three videos have AI
-subtitles; up to 3 comment pages):
+subtitles; up to 3 comment pages). These runs used the earlier digest default of 10 comments;
+the default is now 25:
 
 | call | target | raw chars | raw ~tokens | mcp chars | mcp ~tokens | ratio |
 |---|---|---:|---:|---:|---:|---:|
@@ -215,7 +216,7 @@ server needs `search_videos` + one `get_video_digest` per video (4 calls).
 |---|---:|---:|---:|
 | dsh-bili-scroll, 30 comments (its default) | 10 | 26076 | 147205 |
 | dsh-bili-scroll, 10 comments | 10 | 20168 | 122346 |
-| bili-material, defaults (3000-char subtitle, 10 comments) | 4 | 9390 | 33896 |
+| bili-material, 3000-char subtitle, 10 comments (earlier default) | 4 | 9390 | 33896 |
 | bili-material, full subtitle + 30 comments | 4 | 18268 | 48896 |
 
 \* Sum of input tokens over a sequential agent loop in which every request resends the previous

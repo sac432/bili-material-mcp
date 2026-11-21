@@ -67,7 +67,7 @@ async def search_videos(
 async def get_video_digest(
     bvid: str,
     subtitle_max_chars: int = 3000,
-    top_comments: int = 10,
+    top_comments: int = 25,
 ) -> str:
     """One-call digest of a video: metadata and stats, compressed subtitle (timestamps
     removed, lines merged; first subtitle_max_chars characters), and the top hot comments
