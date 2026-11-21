@@ -28,9 +28,10 @@ server = MCPServer(
     name="bili-material",
     instructions=(
         "Read-only Bilibili material source. Outputs are compact plain text with an "
-        "approximate token count at the end. Prefer get_video_digest (one call for "
-        "metadata + subtitle + hot comments); page through long subtitles with "
-        "get_subtitle(offset=next_offset) only when needed."
+        "approximate token count at the end. When you need several videos, pick them "
+        "from search results first and read them together with ONE get_video_digests "
+        "call (up to 5) instead of separate get_video_digest calls. Page through long "
+        "subtitles with get_subtitle(offset=next_offset) only when needed."
     ),
 )
 
@@ -69,13 +70,32 @@ async def get_video_digest(
     subtitle_max_chars: int = 3000,
     top_comments: int = 25,
 ) -> str:
-    """One-call digest of a video: metadata and stats, compressed subtitle (timestamps
+    """Digest of ONE video (for several videos use get_video_digests): metadata and stats, compressed subtitle (timestamps
     removed, lines merged; first subtitle_max_chars characters), and the top hot comments
     sorted by likes. bvid may be a BV id or a video URL. If the subtitle is truncated, the
     output gives next_offset for get_subtitle."""
     try:
         return render.digest_text(
             await material().get_video_digest(bvid, subtitle_max_chars, top_comments)
+        )
+    except BiliError as exc:
+        return _error(exc)
+
+
+@server.tool(annotations=READ_ONLY, structured_output=False)
+async def get_video_digests(
+    bvids: list[str],
+    subtitle_max_chars: int = 2500,
+    top_comments: int = 20,
+) -> str:
+    """Batch digest: metadata, compressed subtitle and top hot comments for up to 5 videos
+    in ONE call. Prefer this over calling get_video_digest repeatedly — each extra tool
+    step resends the whole conversation. subtitle_max_chars and top_comments apply per
+    video. A video that fails is reported in its own section without aborting the rest.
+    Reading 5 videos can take about 30 seconds because requests are throttled."""
+    try:
+        return render.digests_text(
+            await material().get_video_digests(bvids, subtitle_max_chars, top_comments)
         )
     except BiliError as exc:
         return _error(exc)

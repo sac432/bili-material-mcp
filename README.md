@@ -104,6 +104,7 @@ All tools return compact plain text ending with `[~N tokens | cache=hit|miss]`.
 |---|---|---|
 | `search_videos` | `keyword`, `limit=10` (max 20), `order=totalrank` (`click`, `pubdate`, `dm`, `stow`, `scores`) | one line per video: bvid, title, uploader, play/like/comment counts, duration, date |
 | `get_video_digest` | `bvid`, `subtitle_max_chars=3000`, `top_comments=25` | metadata + stats + description (≤300 chars), compressed subtitle (first chunk, with `next_offset` when truncated), top comments by likes (≤120 chars each) — **one call instead of four** |
+| `get_video_digests` | `bvids` (list, max 5), `subtitle_max_chars=2500`, `top_comments=20` (per video) | the same digest for several videos in **one call / one agent step**; a failing video is reported in its own section; duplicates and invalid ids are dropped |
 | `get_subtitle` | `bvid`, `max_chars=3000` (max 20000), `offset=0`, `page=1` | one chunk of the compressed subtitle, `total_chars`, `next_offset` |
 | `get_hot_comments` | `bvid`, `limit=20` (max 50), `max_chars_per_comment=150` | cleaned comments sorted by likes, with like and reply counts |
 
@@ -142,7 +143,12 @@ asyncio.run(main())
    `truncated; next_offset=...`, `N clipped`).
 6. **Conservative defaults and hard caps.** Subtitle 3000 chars per call (cap 20000), digest
    25 comments, comments 20 (cap 50), search 10 (cap 20).
-7. **Fewer round trips.** `get_video_digest` returns metadata, subtitle and comments together.
+7. **Fewer round trips.** `get_video_digest` returns metadata, subtitle and comments together,
+   and `get_video_digests` does that for up to five videos in a single tool call. In an agent
+   loop every extra step resends the system prompt, tool definitions and all earlier results,
+   so the number of steps matters more than the size of any single result. A subtitle whose
+   remaining text is within 25% of the window is returned whole rather than leaving a short
+   tail that would need another call.
 8. **Local cache** (`data/cache/`, memory + JSON files): search 30 min, video info 6 h,
    subtitles 7 days, comments 2 h. A repeated call for the same bvid makes no network request.
 9. **Token estimate on every response** so the agent (and you) can see the cost. The estimate

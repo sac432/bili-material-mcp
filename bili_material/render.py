@@ -93,11 +93,37 @@ def comments_text(c: dict) -> str:
     return with_footer("\n".join([c["bvid"]] + comments_lines(c)), c.get("cached"))
 
 
-def digest_text(d: dict) -> str:
+def _digest_body(d: dict) -> tuple[list[str], bool]:
     lines = meta_lines(d["meta"]) + subtitle_lines(d["subtitle"])
     if d.get("comments") is not None:
         lines += comments_lines(d["comments"])
     cached = d["meta"].get("cached") and d["subtitle"].get("cached", True)
     if d.get("comments") is not None:
         cached = cached and d["comments"].get("cached")
-    return with_footer("\n".join(lines), bool(cached))
+    return lines, bool(cached)
+
+
+def digest_text(d: dict) -> str:
+    lines, cached = _digest_body(d)
+    return with_footer("\n".join(lines), cached)
+
+
+def digests_text(res: dict) -> str:
+    items = res["items"]
+    ok = sum(1 for it in items if it["ok"])
+    lines = [f"digests: {ok}/{len(items)} ok"]
+    if res.get("invalid"):
+        lines.append(f"invalid ids ignored: {', '.join(res['invalid'])}")
+    if res.get("skipped"):
+        lines.append(f"over batch limit, not read: {', '.join(res['skipped'])}")
+    all_cached = True
+    for i, it in enumerate(items, 1):
+        lines.append(f"\n=== {i}/{len(items)} ===")
+        if not it["ok"]:
+            lines.append(f"{it['bvid']} error: {it['error']}")
+            all_cached = False
+            continue
+        body, cached = _digest_body(it)
+        lines += body
+        all_cached = all_cached and cached
+    return with_footer("\n".join(lines), all_cached)

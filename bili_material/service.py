@@ -42,6 +42,7 @@ MAX_SEARCH = 20
 MAX_COMMENTS = 50
 MAX_COMMENT_PAGES = 3
 MAX_SUBTITLE_CHARS = 20000
+MAX_BATCH = 5
 
 
 def normalize_bvid(value: str) -> str:
@@ -227,7 +228,10 @@ class BiliMaterial:
         if doc["status"] != "ok":
             return out
         text = doc["text"]
-        chunk, next_offset = page_text(text, int(offset), max_chars)
+        # Avoid leaving a small tail that would cost the agent another round trip.
+        remaining = len(text) - max(0, int(offset))
+        window = remaining if remaining <= max_chars * 1.25 else max_chars
+        chunk, next_offset = page_text(text, int(offset), window)
         out.update(
             text=chunk,
             offset=max(0, int(offset)),
@@ -319,3 +323,40 @@ class BiliMaterial:
         if top_comments > 0:
             comments = await self.get_hot_comments(meta["bvid"], top_comments, max_chars_per_comment)
         return {"meta": meta, "subtitle": sub, "comments": comments}
+
+    async def get_video_digests(
+        self,
+        bvids: list[str],
+        subtitle_max_chars: int = 2500,
+        top_comments: int = 20,
+        max_chars_per_comment: int = 120,
+    ) -> dict:
+        """Digest several videos in one call.
+
+        Videos are processed one after another (requests are throttled anyway).
+        A failure on one video is recorded in its entry and does not abort the
+        batch. Duplicate ids are dropped; at most ``MAX_BATCH`` videos are read.
+        """
+        ordered: list[str] = []
+        invalid: list[str] = []
+        for raw in bvids or []:
+            try:
+                b = normalize_bvid(str(raw))
+            except BiliError:
+                invalid.append(str(raw))
+                continue
+            if b not in ordered:
+                ordered.append(b)
+        if not ordered:
+            raise BiliError("no valid BV ids given")
+        skipped = ordered[MAX_BATCH:]
+        ordered = ordered[:MAX_BATCH]
+
+        items: list[dict] = []
+        for b in ordered:
+            try:
+                d = await self.get_video_digest(b, subtitle_max_chars, top_comments, max_chars_per_comment)
+                items.append({"bvid": b, "ok": True, **d})
+            except BiliError as exc:
+                items.append({"bvid": b, "ok": False, "error": str(exc)})
+        return {"items": items, "invalid": invalid, "skipped": skipped}
