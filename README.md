@@ -104,7 +104,7 @@ All tools return compact plain text ending with `[~N tokens | cache=hit|miss]`.
 |---|---|---|
 | `search_videos` | `keyword`, `limit=10` (max 20), `order=totalrank` (`click`, `pubdate`, `dm`, `stow`, `scores`) | one line per video: bvid, title, uploader, play/like/comment counts, duration, date |
 | `get_video_digest` | `bvid`, `subtitle_max_chars=3000`, `top_comments=25` | metadata + stats + description (≤300 chars), compressed subtitle (first chunk, with `next_offset` when truncated), top comments by likes (≤120 chars each) — **one call instead of four** |
-| `get_video_digests` | `bvids` (list, max 5), `subtitle_max_chars=2500`, `top_comments=20` (per video) | the same digest for several videos in **one call / one agent step**; a failing video is reported in its own section; duplicates and invalid ids are dropped |
+| `get_video_digests` | `bvids` (list, max 5), `subtitle_max_chars=20000` (full subtitle), `top_comments=20` (per video) | the same digest with the **full** subtitle for several videos in **one call / one agent step**; pass a small `subtitle_max_chars` to skim; a failing video is reported in its own section; duplicates and invalid ids are dropped |
 | `get_subtitle` | `bvid`, `max_chars=3000` (max 20000), `offset=0`, `page=1` | one chunk of the compressed subtitle, `total_chars`, `next_offset` |
 | `get_hot_comments` | `bvid`, `limit=20` (max 50), `max_chars_per_comment=150` | cleaned comments sorted by likes, with like and reply counts |
 
@@ -252,6 +252,8 @@ the run (from the session log).
 |---|---|---:|---:|---:|---:|---:|
 | `get_video_digests` (batch) | 1 | 3 | 76941 | 30042 | 43136 | 3763 |
 | `get_video_digests` (batch) | 2 | 3 | 77627 | 13880 | 57984 | 5763 |
+| `get_video_digests` (batch, full subtitles by default) | 1 | 2 | 51544 | 23886 | 22144 | 5514 |
+| `get_video_digests` (batch, full subtitles by default) | 2 | 2 | 50049 | 13717 | 32256 | 4076 |
 | `get_video_digest` (single) | 1 | 4 | 115433 | 22205 | 86528 | 6700 |
 | `get_video_digest` (single) | 2 | 4 | 119282 | 18746 | 91008 | 9528 |
 | dsh-bili-scroll `bili_subtitle` + `bili_comments` | 1 | 7 | 217137 | 33086 | 179712 | 4339 |
@@ -261,6 +263,9 @@ the run (from the session log).
   per step and used about 2.8× the batch total.
 - In every bili-material run the model fetched the rest of each subtitle with `get_subtitle`
   in a second tool step: for a "summarise the video" task it wants the whole subtitle.
+- After making the batch tool return full subtitles by default, both runs finished in two
+  steps with a single tool call and no follow-up, about 35% below the 2500-char batch runs.
+  The first of them followed an MCP restart (changed tool list), so its cache was cold.
 - Batch run 1 was the first request after a dsh restart, so its prefix cache was cold; that
   explains its higher uncached input.
 - Two runs per configuration (one for dsh-bili-scroll) is a small sample; the model chooses

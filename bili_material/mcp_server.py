@@ -85,13 +85,15 @@ async def get_video_digest(
 @server.tool(annotations=READ_ONLY, structured_output=False)
 async def get_video_digests(
     bvids: list[str],
-    subtitle_max_chars: int = 2500,
+    subtitle_max_chars: int = 20000,
     top_comments: int = 20,
 ) -> str:
-    """Batch digest: metadata, compressed subtitle and top hot comments for up to 5 videos
-    in ONE call. Prefer this over calling get_video_digest repeatedly — each extra tool
-    step resends the whole conversation. subtitle_max_chars and top_comments apply per
-    video. A video that fails is reported in its own section without aborting the rest.
+    """Batch digest: metadata, the FULL compressed subtitle (default, up to 20000 chars per
+    video) and top hot comments for up to 5 videos in ONE call, so no follow-up
+    get_subtitle call is needed. Prefer this over calling get_video_digest repeatedly —
+    each extra tool step resends the whole conversation. To only skim videos before
+    choosing, pass a small subtitle_max_chars (e.g. 500). subtitle_max_chars and
+    top_comments apply per video. A video that fails is reported in its own section without aborting the rest.
     Reading 5 videos can take about 30 seconds because requests are throttled."""
     try:
         return render.digests_text(

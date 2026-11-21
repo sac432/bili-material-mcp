@@ -327,7 +327,7 @@ class BiliMaterial:
     async def get_video_digests(
         self,
         bvids: list[str],
-        subtitle_max_chars: int = 2500,
+        subtitle_max_chars: int = MAX_SUBTITLE_CHARS,
         top_comments: int = 20,
         max_chars_per_comment: int = 120,
     ) -> dict:
